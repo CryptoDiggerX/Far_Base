@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Far Base — Claim FBASE</title>
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://farbase-claim.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_miniapp","name":"Far Base","url":"https://farbase-claim.vercel.app"}}}'>
+<script src="https://cdn.jsdelivr.net/npm/@farcaster/miniapp-sdk/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
+<style>
+  :root{
+    --void:#060911;
+    --base-deep:#0A0F1E;
+    --panel:#0F1526;
+    --panel-line:rgba(120,150,220,0.14);
+    --blue:#0052FF;
+    --cyan:#3FE0E8;
+    --text-hi:#EAF0FF;
+    --text-mid:#8B96B8;
+    --text-low:#525E80;
+    --amber:#FFB454;
+    --green:#3EE697;
+    --mono: 'JetBrains Mono', 'Space Mono', monospace;
+    --sans: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  @font-face{
+    font-family:'Space Grotesk';
+    src:local('Space Grotesk');
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{
+    background:var(--void);
+    color:var(--text-hi);
+    font-family:var(--sans);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  body{
+    background:
+      radial-gradient(ellipse 700px 400px at 50% -10%, rgba(0,82,255,0.20), transparent 60%),
+      radial-gradient(ellipse 500px 300px at 100% 100%, rgba(63,224,232,0.08), transparent 60%),
+      var(--void);
+    padding-bottom:40px;
+  }
+  .stars{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.5;
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+      radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+      radial-gradient(1px 1px at 250px 20px, #fff, transparent),
+      radial-gradient(1px 1px at 60px 150px, #fff, transparent),
+      radial-gradient(1px 1px at 300px 200px, #fff, transparent),
+      radial-gradient(1px 1px at 180px 260px, #fff, transparent);
+    background-repeat:repeat;
+    background-size:340px 300px;
+  }
+  .wrap{max-width:480px; margin:0 auto; padding:22px 18px 0; position:relative; z-index:1;}
+
+  /* header */
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background:linear-gradient(135deg, var(--blue), #0033A0);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-weight:700; font-size:15px; color:#fff;
+    box-shadow:0 0 22px rgba(0,82,255,0.5);
+  }
+  .brand-text{font-family:var(--mono); font-size:12px; letter-spacing:0.14em; color:var(--text-mid); text-transform:uppercase;}
+  .brand-text b{color:var(--text-hi); display:block; font-size:14px; letter-spacing:0.02em; font-family:var(--sans); font-weight:700;}
+  .net-pill{
+    font-family:var(--mono); font-size:10px; letter-spacing:0.08em;
+    color:var(--cyan); border:1px solid rgba(63,224,232,0.35);
+    background:rgba(63,224,232,0.06);
+    padding:5px 10px; border-radius:100px; display:flex; align-items:center; gap:6px;
+  }
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+  /* trajectory hero */
+  .traj{
+    position:relative; height:110px; margin:8px 0 22px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .traj-line{
+    position:absolute; left:38px; right:38px; top:50%; height:1px;
+    background:repeating-linear-gradient(90deg, rgba(120,150,220,0.4) 0 6px, transparent 6px 12px);
+  }
+  .traj-node{
+    position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .traj-dot{width:12px; height:12px; border-radius:50%; background:var(--blue); box-shadow:0 0 16px rgba(0,82,255,0.8);}
+  .traj-dot.far{background:var(--cyan); box-shadow:0 0 16px rgba(63,224,232,0.8);}
+  .traj-label{font-family:var(--mono); font-size:10px; letter-spacing:0.14em; color:var(--text-mid); text-transform:uppercase;}
+  .traj-ship{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(90deg);
+    font-size:20px; z-index:2; filter:drop-shadow(0 0 10px rgba(0,82,255,0.8));
+    animation:fly 3.5s ease-in-out infinite;
+  }
+  @keyframes fly{0%,100%{left:35%;}50%{left:65%;}}
+
+  h1{font-size:26px; font-weight:700; letter-spacing:-0.01em; line-height:1.15; margin-bottom:6px;}
+  .sub{font-size:13.5px; color:var(--text-mid); line-height:1.5; margin-bottom:24px;}
+
+  /* allocation card - the highlight */
+  .alloc-card{
+    position:relative;
+    border-radius:20px;
+    padding:26px 22px;
+    background:linear-gradient(160deg, rgba(0,82,255,0.14), rgba(15,21,38,0.9) 55%);
+    border:1px solid rgba(0,82,255,0.35);
+    box-shadow:0 0 0 1px rgba(255,255,255,0.02) inset, 0 20px 60px -20px rgba(0,82,255,0.35);
+    margin-bottom:16px;
+    overflow:hidden;
+  }
+  .alloc-card::before{
+    content:'';
+    position:absolute; top:-40%; right:-20%; width:220px; height:220px;
+    background:radial-gradient(circle, rgba(63,224,232,0.18), transparent 70%);
+    pointer-events:none;
+  }
+  .alloc-eyebrow{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--cyan); margin-bottom:10px; display:flex; align-items:center; gap:8px;
+  }
+  .alloc-amount{
+    font-family:var(--mono); font-size:44px; font-weight:700; line-height:1;
+    color:var(--text-hi); letter-spacing:-0.01em; margin-bottom:4px;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .alloc-amount span{font-size:16px; color:var(--text-mid); font-weight:500;}
+  .alloc-usd{font-size:12.5px; color:var(--text-low); font-family:var(--mono); margin-bottom:18px;}
+  .tier-row{display:flex; align-items:center; justify-content:space-between; padding-top:16px; border-top:1px solid var(--panel-line);}
+  .tier-item{text-align:left;}
+  .tier-item .tl{font-family:var(--mono); font-size:9.5px; color:var(--text-low); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;}
+  .tier-item .tv{font-family:var(--mono); font-size:14px; color:var(--text-hi); font-weight:600;}
+  .score-badge{
+    font-family:var(--mono); font-size:13px; font-weight:700; color:var(--green);
+    background:rgba(62,230,151,0.1); border:1px solid rgba(62,230,151,0.3);
+    padding:4px 10px; border-radius:8px;
+  }
+
+  /* stat grid */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
+  .stat-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
+    padding:14px 16px;
+  }
+  .stat-card .sl{font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; color:var(--text-low); text-transform:uppercase; margin-bottom:6px;}
+  .stat-card .sv{font-family:var(--mono); font-size:15px; color:var(--text-hi); font-weight:600;}
+  .stat-card .sv.accent{color:var(--cyan);}
+
+  /* claim button */
+  .claim-btn{
+    width:100%; padding:17px; border-radius:14px; border:none;
+    background:linear-gradient(135deg, var(--blue), #0038CC);
+    color:#fff; font-family:var(--sans); font-size:15.5px; font-weight:700;
+    letter-spacing:0.01em; cursor:pointer;
+    box-shadow:0 10px 30px -8px rgba(0,82,255,0.6);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+    margin-bottom:10px;
+  }
+  .claim-btn:active{transform:scale(0.98);}
+  .claim-btn:disabled{
+    background:var(--panel); color:var(--text-low); box-shadow:none; cursor:not-allowed;
+    border:1px solid var(--panel-line);
+  }
+  .fee-note{
+    text-align:center; font-family:var(--mono); font-size:11px; color:var(--text-low); margin-bottom:26px;
+  }
+
+  /* not eligible */
+  .ineligible{
+    background:rgba(255,180,84,0.06); border:1px solid rgba(255,180,84,0.3);
+    border-radius:14px; padding:16px; margin-bottom:16px;
+    font-size:13px; color:var(--amber); line-height:1.5;
+  }
+  .ineligible b{display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;}
+
+  /* status */
+  .status-line{
+    display:flex; align-items:center; gap:8px; justify-content:center;
+    font-family:var(--mono); font-size:12px; color:var(--text-mid); margin-bottom:22px; min-height:16px;
+  }
+  .spinner{width:12px; height:12px; border-radius:50%; border:2px solid var(--panel-line); border-top-color:var(--cyan); animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* listing banner */
+  .listing{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
+    padding:16px 18px; margin-bottom:14px;
+  }
+  .listing-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+  }
+  .listing-head .lt{font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid);}
+  .listing-date{font-family:var(--mono); font-size:12px; color:var(--cyan); font-weight:700;}
+  .exch-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .exch-chip{
+    font-family:var(--mono); font-size:11px; color:var(--text-hi);
+    background:rgba(255,255,255,0.03); border:1px solid var(--panel-line);
+    padding:6px 12px; border-radius:8px;
+  }
+  .exch-chip.dex{color:var(--blue); border-color:rgba(0,82,255,0.3); background:rgba(0,82,255,0.06);}
+  .exch-chip.cex{color:var(--green); border-color:rgba(62,230,151,0.25); background:rgba(62,230,151,0.05);}
+
+  .foot-note{
+    text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--text-low); line-height:1.6; padding:6px 10px;
+  }
+  .foot-note a{color:var(--text-mid);}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">FB</div>
+      <div class="brand-text">Token Claim<b>Far Base</b></div>
+    </div>
+    <div class="net-pill"><span class="dot"></span>BASE</div>
+  </div>
+
+  <div class="traj">
+    <div class="traj-line"></div>
+    <div class="traj-node"><div class="traj-dot"></div><div class="traj-label">Base</div></div>
+    <div class="traj-ship">🛰</div>
+    <div class="traj-node"><div class="traj-dot far"></div><div class="traj-label">Far</div></div>
+  </div>
+
+  <h1>Claim your FBASE allocation</h1>
+  <p class="sub">Allocations are fixed by Farcaster reputation and distributed instantly on-chain the moment you claim.</p>
+
+  <div id="app-body">
+    <!-- populated by JS -->
+    <div class="status-line"><div class="spinner"></div>Reading Farcaster context…</div>
+  </div>
+
+  <div class="listing">
+    <div class="listing-head">
+      <div class="lt">Listing Schedule</div>
+      <div class="listing-date">Aug 1, 2026</div>
+    </div>
+    <div class="exch-row">
+      <div class="exch-chip dex">Uniswap</div>
+      <div class="exch-chip dex">Aerodrome</div>
+      <div class="exch-chip cex">Bitget</div>
+      <div class="exch-chip cex">OKX</div>
+      <div class="exch-chip cex">KuCoin</div>
+    </div>
+  </div>
+
+  <div class="foot-note">FBASE is an ERC-20 token on Base Mainnet.<br>Claim fee covers network settlement. No further action needed after claiming.</div>
+
+</div>
+
+<script>
+(function(){
+  // ---- CONFIG ----
+  const CONTRACT = "0x0EdD929cE2C0cd057275dDDe3988Fc287e27134"; // FBASE token
+  const FEE_RECEIVER = "0x580Aab97021D7D379c8d26444eAae332C3014ba7"; // fee wallet
+  const FEE_ETH = "0.00003";
+  const MIN_SCORE = 0.25;
+  const TIERS = [
+    { min: 0.25, max: 0.5,  amount: 5670 },
+    { min: 0.5,  max: 0.75, amount: 9562 },
+    { min: 0.75, max: 999,  amount: 13568 }
+  ];
+  const BASE_CHAIN_ID_HEX = "0x2105"; // 8453
+
+  const appBody = document.getElementById('app-body');
+
+  function fmt(n){ return n.toLocaleString('en-US'); }
+
+  function tierFor(score){
+    for (const t of TIERS){ if (score >= t.min && score < t.max) return t; }
+    if (score >= 0.75) return TIERS[2];
+    return null;
+  }
+
+  function renderIneligible(score){
+    appBody.innerHTML = `
+      <div class="ineligible">
+        <b>Not eligible yet</b>
+        Your Neynar score (${score !== null ? score.toFixed(2) : 'N/A'}) is below the minimum threshold of ${MIN_SCORE}. Build your Farcaster reputation and check back before claims close.
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sl">Your Score</div><div class="sv">${score !== null ? score.toFixed(2) : '—'}</div></div>
+        <div class="stat-card"><div class="sl">Required</div><div class="sv accent">${MIN_SCORE}+</div></div>
+      </div>
+    `;
+  }
+
+  function renderEligible(score, tier, fid){
+    appBody.innerHTML = `
+      <div class="alloc-card">
+        <div class="alloc-eyebrow">◆ Your Allocation</div>
+        <div class="alloc-amount">${fmt(tier.amount)}<span>FBASE</span></div>
+        <div class="alloc-usd">Fixed allocation · instant settlement on claim</div>
+        <div class="tier-row">
+          <div class="tier-item"><div class="tl">Neynar Score</div><div class="tv">${score.toFixed(2)}</div></div>
+          <div class="tier-item"><div class="tl">Tier</div><div class="tv">${tier.min}–${tier.max === 999 ? '1.0' : tier.max}</div></div>
+          <div class="score-badge">ELIGIBLE</div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sl">Network</div><div class="sv">Base Mainnet</div></div>
+        <div class="stat-card"><div class="sl">Claim Fee</div><div class="sv accent">${FEE_ETH} ETH</div></div>
+      </div>
+      <button class="claim-btn" id="claimBtn">Claim ${fmt(tier.amount)} FBASE</button>
+      <div class="fee-note">One transaction · fee covers gas &amp; settlement</div>
+      <div class="status-line" id="statusLine"></div>
+    `;
+    document.getElementById('claimBtn').addEventListener('click', () => doClaim(fid, tier));
+  }
+
+  function setStatus(html){
+    const el = document.getElementById('statusLine');
+    if (el) el.innerHTML = html;
+  }
+
+  async function doClaim(fid, tier){
+    const btn = document.getElementById('claimBtn');
+    btn.disabled = true;
+    btn.textContent = 'Confirm in wallet…';
+    setStatus('<div class="spinner"></div>Waiting for wallet confirmation…');
+
+    try {
+      let provider, signer, userAddress;
+
+      if (window.sdk && window.sdk.wallet) {
+        const ethProvider = await window.sdk.wallet.getEthereumProvider();
+        provider = new ethers.BrowserProvider(ethProvider);
+      } else if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+      } else {
+        throw new Error('No wallet available');
+      }
+
+      await provider.send('eth_requestAccounts', []);
+      const network = await provider.getNetwork();
+      if (network.chainId !== 8453n) {
+        try {
+          await provider.send('wallet_switchEthereumChain', [{ chainId: BASE_CHAIN_ID_HEX }]);
+        } catch (switchErr) {
+          throw new Error('Please switch to Base Mainnet');
+        }
+      }
+
+      signer = await provider.getSigner();
+      userAddress = await signer.getAddress();
+
+      btn.textContent = 'Sending fee…';
+      const tx = await signer.sendTransaction({
+        to: FEE_RECEIVER,
+        value: ethers.parseEther(FEE_ETH),
+        gasLimit: 21000
+      });
+
+      setStatus('<div class="spinner"></div>Confirming transaction…');
+      await tx.wait();
+
+      btn.textContent = 'Delivering FBASE…';
+      setStatus('<div class="spinner"></div>Sending FBASE to your wallet…');
+
+      const res = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: userAddress,
+          fid: fid,
+          feeTxHash: tx.hash,
+          amount: tier.amount
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Claim failed');
+      }
+
+      btn.textContent = 'Claimed ✓';
+      setStatus(`FBASE sent · <a href="https://basescan.org/tx/${data.txHash}" target="_blank" style="color:#3FE0E8">view transaction</a>`);
+
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = 'Try Again';
+      setStatus('<span style="color:#FFB454">' + (err.message || 'Something went wrong') + '</span>');
+    }
+  }
+
+  async function init(){
+    try {
+      let fid = null, score = null;
+
+      if (window.sdk) {
+        await window.sdk.actions.ready();
+        const context = await window.sdk.context;
+        fid = context?.user?.fid || null;
+      }
+
+      if (!fid) {
+        appBody.innerHTML = `<div class="ineligible"><b>Open in Farcaster</b>Launch this app from a Farcaster client to verify your identity and claim FBASE.</div>`;
+        return;
+      }
+
+      appBody.innerHTML = `<div class="status-line"><div class="spinner"></div>Checking Neynar score for FID ${fid}…</div>`;
+
+      const res = await fetch('/api/score?fid=' + fid);
+      const data = await res.json();
+      score = data.score;
+
+      const tier = tierFor(score);
+      if (score < MIN_SCORE || !tier) {
+        renderIneligible(score);
+      } else {
+        renderEligible(score, tier, fid);
+      }
+    } catch (err) {
+      console.error(err);
+      appBody.innerHTML = `<div class="ineligible"><b>Couldn't load your data</b>Something went wrong reading your Farcaster profile. Please reopen the app.</div>`;
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
