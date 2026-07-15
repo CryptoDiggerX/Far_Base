@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Far Base — Claim FBASE</title>
-<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://far-base.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_frame","name":"Far Base","url":"https://far-base.vercel.app"}}}'>
-<script src="https://cdn.jsdelivr.net/npm/@farcaster/miniapp-sdk/dist/index.min.js"></script>
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://far-base.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_miniapp","name":"Far Base","url":"https://far-base.vercel.app","splashImageUrl":"https://far-base.vercel.app/og.png","splashBackgroundColor":"#060911"}}}'>
+<meta name="fc:frame" content='{"version":"1","imageUrl":"https://far-base.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_frame","name":"Far Base","url":"https://far-base.vercel.app","splashImageUrl":"https://far-base.vercel.app/og.png","splashBackgroundColor":"#060911"}}}'>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 <style>
   :root{
@@ -248,8 +248,21 @@
 
 </div>
 
-<script>
-(function(){
+<script type="module">
+(async function(){
+  // ---- Load Farcaster SDK (same resilient pattern as Farmeow) ----
+  let sdk = null;
+  try{
+    const mod = await Promise.race([
+      import('https://esm.sh/@farcaster/frame-sdk'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('sdk_timeout')), 4000))
+    ]);
+    sdk = mod.sdk;
+  } catch(e) {
+    // Not embedded in Farcaster, or the SDK failed to load — app still
+    // works, it'll just show the "open in Farcaster" message below.
+  }
+
   // ---- CONFIG ----
   const CONTRACT = "0x0EdD929cE2C0cd057275dDDe3988Fc287e27134"; // FBASE token
   const FEE_RECEIVER = "0x580Aab97021D7D379c8d26444eAae332C3014ba7"; // fee wallet
@@ -322,8 +335,9 @@
     try {
       let provider, signer, userAddress;
 
-      if (window.sdk && window.sdk.wallet) {
-        const ethProvider = await window.sdk.wallet.getEthereumProvider();
+      if (sdk && sdk.wallet) {
+        // Farcaster miniapp embedded wallet
+        const ethProvider = await sdk.wallet.getEthereumProvider();
         provider = new ethers.BrowserProvider(ethProvider);
       } else if (window.ethereum) {
         provider = new ethers.BrowserProvider(window.ethereum);
@@ -385,12 +399,20 @@
   }
 
   async function init(){
+    // Dismiss the splash screen immediately — never gate this behind
+    // data fetching, or the app can hang on a blank splash forever.
+    if (sdk) {
+      try { await sdk.actions.ready(); } catch(e) { /* not inside a Farcaster host — fine */ }
+    }
+
     try {
       let fid = null, score = null;
 
-      if (window.sdk) {
-        await window.sdk.actions.ready();
-        const context = await window.sdk.context;
+      if (sdk) {
+        const context = await Promise.race([
+          sdk.context,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('context_timeout')), 2500))
+        ]);
         fid = context?.user?.fid || null;
       }
 
