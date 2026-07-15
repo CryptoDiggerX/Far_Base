@@ -1,8 +1,20 @@
 {
-  "name": "farbase-claim",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "ethers": "^6.13.0"
+  "accountAssociation": {
+    "header": "REPLACE_WITH_YOUR_SIGNED_HEADER",
+    "payload": "REPLACE_WITH_YOUR_SIGNED_PAYLOAD",
+    "signature": "REPLACE_WITH_YOUR_SIGNATURE"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Far Base",
+    "iconUrl": "https://far-base.vercel.app/og.png",
+    "homeUrl": "https://far-base.vercel.app",
+    "imageUrl": "https://far-base.vercel.app/og.png",
+    "splashImageUrl": "https://far-base.vercel.app/og.png",
+    "splashBackgroundColor": "#060911",
+    "subtitle": "Claim $FBASE by Neynar score",
+    "description": "Score above 0.25 on Neynar and claim $FBASE on Base Mainnet.",
+    "primaryCategory": "finance",
+    "tags": ["airdrop", "base", "farcaster", "token", "claim"]
   }
 }
