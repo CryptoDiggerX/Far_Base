@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Far Base — Claim FBASE</title>
-<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://farbase-claim.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_miniapp","name":"Far Base","url":"https://farbase-claim.vercel.app"}}}'>
+<meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://far-base.vercel.app/og.png","button":{"title":"Claim FBASE","action":{"type":"launch_miniapp","name":"Far Base","url":"https://far-base.vercel.app"}}}'>
 <script src="https://cdn.jsdelivr.net/npm/@farcaster/miniapp-sdk/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.0/dist/ethers.umd.min.js"></script>
 <style>
@@ -56,7 +56,6 @@
   }
   .wrap{max-width:480px; margin:0 auto; padding:22px 18px 0; position:relative; z-index:1;}
 
-  /* header */
   .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:26px;}
   .brand{display:flex; align-items:center; gap:10px;}
   .brand-mark{
@@ -77,7 +76,6 @@
   .dot{width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 
-  /* trajectory hero */
   .traj{
     position:relative; height:110px; margin:8px 0 22px;
     display:flex; align-items:center; justify-content:space-between;
@@ -102,7 +100,6 @@
   h1{font-size:26px; font-weight:700; letter-spacing:-0.01em; line-height:1.15; margin-bottom:6px;}
   .sub{font-size:13.5px; color:var(--text-mid); line-height:1.5; margin-bottom:24px;}
 
-  /* allocation card - the highlight */
   .alloc-card{
     position:relative;
     border-radius:20px;
@@ -140,7 +137,6 @@
     padding:4px 10px; border-radius:8px;
   }
 
-  /* stat grid */
   .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;}
   .stat-card{
     background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
@@ -150,7 +146,6 @@
   .stat-card .sv{font-family:var(--mono); font-size:15px; color:var(--text-hi); font-weight:600;}
   .stat-card .sv.accent{color:var(--cyan);}
 
-  /* claim button */
   .claim-btn{
     width:100%; padding:17px; border-radius:14px; border:none;
     background:linear-gradient(135deg, var(--blue), #0038CC);
@@ -170,7 +165,6 @@
     text-align:center; font-family:var(--mono); font-size:11px; color:var(--text-low); margin-bottom:26px;
   }
 
-  /* not eligible */
   .ineligible{
     background:rgba(255,180,84,0.06); border:1px solid rgba(255,180,84,0.3);
     border-radius:14px; padding:16px; margin-bottom:16px;
@@ -178,7 +172,6 @@
   }
   .ineligible b{display:block; font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;}
 
-  /* status */
   .status-line{
     display:flex; align-items:center; gap:8px; justify-content:center;
     font-family:var(--mono); font-size:12px; color:var(--text-mid); margin-bottom:22px; min-height:16px;
@@ -186,7 +179,6 @@
   .spinner{width:12px; height:12px; border-radius:50%; border:2px solid var(--panel-line); border-top-color:var(--cyan); animation:spin 0.8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  /* listing banner */
   .listing{
     background:var(--panel); border:1px solid var(--panel-line); border-radius:14px;
     padding:16px 18px; margin-bottom:14px;
