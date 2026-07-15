@@ -1,0 +1,12 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "Far Base",
+    "iconUrl": "https://far-base.vercel.app/og.png",
+    "homeUrl": "https://far-base.vercel.app",
+    "imageUrl": "https://far-base.vercel.app/og.png",
+    "buttonTitle": "Claim FBASE",
+    "splashImageUrl": "https://far-base.vercel.app/og.png",
+    "splashBackgroundColor": "#060911"
+  }
+}
