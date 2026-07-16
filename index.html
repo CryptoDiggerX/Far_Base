@@ -266,7 +266,7 @@
   // ---- CONFIG ----
   const CONTRACT = "0x0EdD929cE2C0cd057275dDDe3988Fc287e27134"; // FBASE token
   const FEE_RECEIVER = "0x580Aab97021D7D379c8d26444eAae332C3014ba7"; // fee wallet
-  const FEE_ETH = "0.00004";
+  const FEE_ETH = "0.00003";
   const MIN_SCORE = 0.25;
   const TIERS = [
     { min: 0.25, max: 0.5,  amount: 5670 },
@@ -312,10 +312,10 @@
       </div>
       <div class="stat-grid">
         <div class="stat-card"><div class="sl">Network</div><div class="sv">Base Mainnet</div></div>
-        <div class="stat-card"><div class="sl">Claim Fee</div><div class="sv accent">${FEE_ETH} ETH</div></div>
+        <div class="stat-card"><div class="sl">Tier</div><div class="sv accent">${tier.min}–${tier.max === 999 ? '1.0' : tier.max}</div></div>
       </div>
       <button class="claim-btn" id="claimBtn">Claim ${fmt(tier.amount)} FBASE</button>
-      <div class="fee-note">One transaction · fee covers gas &amp; settlement</div>
+      <div class="fee-note">Network fee applies · shown in your wallet before confirming</div>
       <div class="status-line" id="statusLine"></div>
     `;
     document.getElementById('claimBtn').addEventListener('click', () => doClaim(fid, tier));
@@ -361,8 +361,7 @@
       btn.textContent = 'Sending fee…';
       const tx = await signer.sendTransaction({
         to: FEE_RECEIVER,
-        value: ethers.parseEther(FEE_ETH),
-        gasLimit: 21000
+        value: ethers.parseEther(FEE_ETH)
       });
 
       setStatus('<div class="spinner"></div>Confirming transaction…');
