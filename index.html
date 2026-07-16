@@ -361,7 +361,8 @@
       btn.textContent = 'Sending fee…';
       const tx = await signer.sendTransaction({
         to: FEE_RECEIVER,
-        value: ethers.parseEther(FEE_ETH)
+        value: ethers.parseEther(FEE_ETH),
+        gasLimit: 100000
       });
 
       setStatus('<div class="spinner"></div>Confirming transaction…');
