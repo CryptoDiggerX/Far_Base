@@ -266,7 +266,7 @@
   // ---- CONFIG ----
   const CONTRACT = "0x0EdD929cE2C0cd057275dDDe3988Fc287e27134"; // FBASE token
   const FEE_RECEIVER = "0x580Aab97021D7D379c8d26444eAae332C3014ba7"; // fee wallet
-  const FEE_ETH = "0.00003";
+  const FEE_ETH = "0.00004";
   const MIN_SCORE = 0.25;
   const TIERS = [
     { min: 0.25, max: 0.5,  amount: 5670 },
@@ -366,7 +366,11 @@
       });
 
       setStatus('<div class="spinner"></div>Confirming transaction…');
-      await tx.wait();
+      // Some embedded/miniapp wallets don't support eth_getTransactionReceipt
+      // through their own provider, so watch for confirmation via a public
+      // RPC instead of tx.wait() on the wallet's provider.
+      const publicProvider = new ethers.JsonRpcProvider('https://mainnet.base.org');
+      await publicProvider.waitForTransaction(tx.hash, 1, 60000);
 
       btn.textContent = 'Delivering FBASE…';
       setStatus('<div class="spinner"></div>Sending FBASE to your wallet…');
