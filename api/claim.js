@@ -7,7 +7,7 @@ import { ethers } from 'ethers';
 
 const CONTRACT_ADDRESS = '0x0EdD929cE2C0cd057275dDDe3988Fc287e27134';
 const FEE_RECEIVER = '0x580Aab97021D7D379c8d26444eAae332C3014ba7'.toLowerCase();
-const FEE_ETH = '0.00003';
+const FEE_ETH = '0.00004';
 const MIN_SCORE = 0.25;
 const BASE_RPC = 'https://mainnet.base.org';
 
@@ -95,14 +95,24 @@ export default async function handler(req, res) {
       return res.status(403).json({ success: false, error: 'Not eligible' });
     }
 
-    // 3. Verify the fee transaction actually happened on-chain
+    // 3. Validate the recipient address strictly — without this, ethers can
+    // fall through to ENS name resolution for malformed input, which fails
+    // hard on Base Mainnet (no ENS registry) with a cryptic BAD_DATA error.
+    let recipient;
+    try {
+      recipient = ethers.getAddress(address);
+    } catch (e) {
+      return res.status(400).json({ success: false, error: 'Invalid recipient address' });
+    }
+
+    // 4. Verify the fee transaction actually happened on-chain
     const provider = new ethers.JsonRpcProvider(BASE_RPC);
     const feeTx = await provider.getTransaction(feeTxHash);
 
     if (!feeTx) {
       return res.status(400).json({ success: false, error: 'Fee transaction not found' });
     }
-    if (feeTx.from.toLowerCase() !== address.toLowerCase()) {
+    if (feeTx.from.toLowerCase() !== recipient.toLowerCase()) {
       return res.status(400).json({ success: false, error: 'Fee transaction sender mismatch' });
     }
     if (feeTx.to.toLowerCase() !== FEE_RECEIVER) {
@@ -117,16 +127,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: 'Fee transaction not confirmed' });
     }
 
-    // 4. Send FBASE from the distributor wallet
+    // 5. Send FBASE from the distributor wallet
     const distributorWallet = new ethers.Wallet(process.env.DISTRIBUTOR_PRIVATE_KEY, provider);
     const token = new ethers.Contract(CONTRACT_ADDRESS, ERC20_ABI, distributorWallet);
     const decimals = await token.decimals();
     const amountWei = ethers.parseUnits(tier.amount.toString(), decimals);
 
-    const sendTx = await token.transfer(address, amountWei);
+    const sendTx = await token.transfer(recipient, amountWei);
     await sendTx.wait();
 
-    // 5. Mark claimed (best-effort)
+    // 6. Mark claimed (best-effort)
     await markClaimed(fid, sendTx.hash);
 
     return res.status(200).json({
@@ -139,4 +149,4 @@ export default async function handler(req, res) {
     console.error('claim.js error:', err);
     return res.status(500).json({ success: false, error: 'Claim processing failed' });
   }
-    }
+}
